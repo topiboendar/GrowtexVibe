@@ -21,6 +21,7 @@ import {
   COLOR_SWATCHES,
   formatIDR,
   productsApi,
+  type CategoryId,
   type Product,
 } from '@/api'
 
@@ -143,6 +144,14 @@ const testimonials = [
   },
 ]
 
+const categoryColors: Record<CategoryId, string> = {
+  kaos: '#f4f2ec',
+  polo: '#1e2a44',
+  hoodie: '#5c6249',
+  oversized: '#16161a',
+  totebag: '#e6dcc8',
+}
+
 onMounted(async () => {
   try {
     products.value = await productsApi.list()
@@ -172,8 +181,8 @@ onMounted(async () => {
           </span>
 
           <h1 class="h-display mt-5">
-            Kaos polos premium,
-            <span class="text-muted">siap jadi kanvas ceritamu.</span>
+            Kaos custom satuan
+            <span class="text-muted">&amp; partai besar.</span>
           </h1>
 
           <p class="lead mt-4 max-w-md">
@@ -240,16 +249,20 @@ onMounted(async () => {
                     v-for="color in COLOR_SWATCHES.slice(0, 6)"
                     :key="color.hex"
                     type="button"
-                    class="size-5 rounded-full border transition-transform hover:scale-110"
-                    :class="
-                      heroColor === color.hex
-                        ? 'border-ink ring-1 ring-ink/20 ring-offset-2 ring-offset-surface'
-                        : 'border-ink/15'
-                    "
-                    :style="{ backgroundColor: color.hex }"
+                    class="group -m-2.5 flex size-11 items-center justify-center rounded-full"
                     :aria-label="`Warna ${color.name}`"
                     @click="heroColor = color.hex"
-                  />
+                  >
+                    <span
+                      class="size-5 rounded-full border transition-transform group-hover:scale-110"
+                      :class="
+                        heroColor === color.hex
+                          ? 'border-ink ring-1 ring-ink/20 ring-offset-2 ring-offset-surface'
+                          : 'border-ink/15'
+                      "
+                      :style="{ backgroundColor: color.hex }"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
@@ -274,6 +287,55 @@ onMounted(async () => {
             <h2 class="text-[13.5px] font-semibold">{{ value.title }}</h2>
             <p class="mt-1 text-[12.5px] leading-relaxed text-muted">{{ value.body }}</p>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ CATEGORIES ========================== -->
+    <section class="border-t border-line bg-surface">
+      <div class="container-page py-12 sm:py-14">
+        <div class="flex items-end justify-between gap-4">
+          <div>
+            <p class="eyebrow">Kategori</p>
+            <h2 class="h-section mt-2">Pakaian polos</h2>
+            <p class="lead mt-2 max-w-md">
+              Kaos, polo, hoodie, oversized, sampai totebag — semua tersedia satuan maupun partai
+              besar.
+            </p>
+          </div>
+          <RouterLink
+            :to="{ name: 'home', hash: '#koleksi' }"
+            class="hidden shrink-0 items-center gap-1.5 text-sm font-semibold underline decoration-line decoration-1 underline-offset-4 transition-colors hover:decoration-ink sm:inline-flex"
+          >
+            Lihat semua
+            <ArrowUpRight class="size-4" />
+          </RouterLink>
+        </div>
+
+        <div class="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <RouterLink
+            v-for="category in CATEGORIES"
+            :key="category.id"
+            :to="{ name: 'home', query: { kategori: category.id }, hash: '#koleksi' }"
+            class="group flex flex-col overflow-hidden rounded-3xl border border-line bg-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-ink/15 hover:shadow-soft"
+          >
+            <div class="relative overflow-hidden bg-gradient-to-br from-cream to-sand/60">
+              <div
+                class="aspect-[4/5] w-full p-3 transition-transform duration-500 group-hover:scale-[1.04]"
+              >
+                <GarmentVisual :color="categoryColors[category.id]" :type="category.id" />
+              </div>
+            </div>
+            <div class="flex items-center justify-between gap-2 border-t border-line px-3.5 py-3">
+              <div class="min-w-0">
+                <p class="truncate text-[13px] font-semibold">{{ category.label }}</p>
+                <p class="truncate text-[10.5px] text-muted">{{ category.caption }}</p>
+              </div>
+              <ArrowUpRight
+                class="size-3.5 shrink-0 text-muted transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ink"
+              />
+            </div>
+          </RouterLink>
         </div>
       </div>
     </section>
@@ -362,26 +424,31 @@ onMounted(async () => {
         </div>
 
         <!-- Color filter -->
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-          <span class="mr-1 text-[11px] font-semibold tracking-wider text-muted uppercase">Warna</span>
+        <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span class="text-[11px] font-semibold tracking-wider text-muted uppercase">Warna</span>
           <button
             v-for="color in COLOR_SWATCHES"
             :key="color.hex"
             type="button"
-            class="size-6 rounded-full border transition-transform hover:scale-110"
-            :class="
-              activeColor.toLowerCase() === color.hex.toLowerCase()
-                ? 'border-ink ring-1 ring-ink/20 ring-offset-2'
-                : 'border-ink/15'
-            "
-            :style="{ backgroundColor: color.hex }"
+            class="group -mx-2.5 flex size-11 items-center justify-center rounded-full"
             :title="color.name"
             :aria-label="`Filter warna ${color.name}`"
+            :aria-pressed="activeColor.toLowerCase() === color.hex.toLowerCase()"
             @click="pickColor(color.hex)"
-          />
+          >
+            <span
+              class="size-6 rounded-full border transition-transform group-hover:scale-110"
+              :class="
+                activeColor.toLowerCase() === color.hex.toLowerCase()
+                  ? 'border-ink ring-1 ring-ink/20 ring-offset-2'
+                  : 'border-ink/15'
+              "
+              :style="{ backgroundColor: color.hex }"
+            />
+          </button>
           <button
             v-if="hasFilter"
-            class="ml-1 text-[11px] font-medium text-muted underline underline-offset-4 hover:text-ink"
+            class="ml-1 min-h-11 text-[11px] font-medium text-muted underline underline-offset-4 hover:text-ink"
             @click="resetFilters"
           >
             Reset

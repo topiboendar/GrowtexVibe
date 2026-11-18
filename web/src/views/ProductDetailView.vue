@@ -234,7 +234,7 @@ watch(
                   v-for="color in product.colors"
                   :key="color.name"
                   type="button"
-                  class="size-9 rounded-full border transition-transform hover:scale-105"
+                  class="size-11 rounded-full border transition-transform hover:scale-105"
                   :class="
                     selectedColor === color.name
                       ? 'border-ink ring-1 ring-ink/20 ring-offset-2'

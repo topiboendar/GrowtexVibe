@@ -27,7 +27,7 @@ const accountOpen = ref(false)
 const searchOpen = ref(false)
 const searchTerm = ref('')
 
-const cartLabel = computed(() => (cart.count > 9 ? '9+' : String(cart.count)))
+const cartLabel = computed(() => (cart.totalItems > 9 ? '9+' : String(cart.totalItems)))
 
 function handleScroll() {
   scrolled.value = window.scrollY > 8
@@ -198,7 +198,7 @@ onBeforeUnmount(() => {
           <button class="icon-btn relative" aria-label="Buka keranjang" @click="cart.toggleDrawer()">
             <ShoppingBag class="size-[19px]" />
             <span
-              v-if="cart.count > 0"
+              v-if="cart.totalItems > 0"
               class="absolute top-1 right-1 flex size-[18px] items-center justify-center rounded-full bg-accent text-[10px] font-bold text-white ring-2 ring-canvas"
             >
               {{ cartLabel }}

@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import {
   COLOR_SWATCHES,
   dtfUnitPrice,
+  FREE_SHIPPING_MIN,
   shippingFor,
   type CartItem,
   type DtfOption,
@@ -44,7 +45,7 @@ export const useCartStore = defineStore('cart', () => {
   const isDrawerOpen = ref(false)
   const lastAddedKey = ref<string | null>(null)
 
-  const count = computed(() => items.value.reduce((sum, item) => sum + item.qty, 0))
+  const totalItems = computed(() => items.value.reduce((sum, item) => sum + item.qty, 0))
   const isEmpty = computed(() => items.value.length === 0)
   const subtotal = computed(() => items.value.reduce((sum, item) => sum + item.price * item.qty, 0))
   const dtfTotal = computed(() =>
@@ -52,7 +53,7 @@ export const useCartStore = defineStore('cart', () => {
   )
   const shipping = computed(() => shippingFor(subtotal.value))
   const total = computed(() => subtotal.value + shipping.value)
-  const freeShippingThreshold = 500_000
+  const freeShippingThreshold = FREE_SHIPPING_MIN
   const freeShippingRemaining = computed(() => Math.max(0, freeShippingThreshold - subtotal.value))
   const freeShippingProgress = computed(() =>
     Math.min(100, Math.round((subtotal.value / freeShippingThreshold) * 100)),
@@ -143,7 +144,7 @@ export const useCartStore = defineStore('cart', () => {
     items.value = items.value.filter((item) => item.key !== key)
   }
 
-  function clear() {
+  function clearCart() {
     items.value = []
     lastAddedKey.value = null
   }
@@ -152,7 +153,7 @@ export const useCartStore = defineStore('cart', () => {
     items,
     isDrawerOpen,
     lastAddedKey,
-    count,
+    totalItems,
     isEmpty,
     subtotal,
     dtfTotal,
@@ -169,6 +170,6 @@ export const useCartStore = defineStore('cart', () => {
     increment,
     decrement,
     removeItem,
-    clear,
+    clearCart,
   }
 })

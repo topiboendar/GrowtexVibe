@@ -72,7 +72,7 @@ Untuk mereset data demo, hapus key `gv:*` di Application → Local Storage brows
 
 | Path                | Halaman                                             |
 | ------------------- | --------------------------------------------------- |
-| `/`                 | Beranda: hero, keunggulan, katalog, DTF, testimoni  |
+| `/`                 | Beranda: hero, keunggulan, kategori, katalog, warna, DTF, partner, testimoni |
 | `/products/:id`     | Detail produk + kustom sablon DTF                   |
 | `/checkout`         | Form kontak, alamat, pembayaran, ringkasan pesanan  |
 | `/invoice/:id`      | Invoice pesanan (siap cetak)                        |
@@ -143,6 +143,8 @@ Token dikirim sebagai `Authorization: Bearer <token>`. Error `4xx` selain `404` 
 
 - Token warna & utilitas kustom ada di `src/style.css` (`--color-canvas`, `--color-accent`, `.btn`, `.field`, `.chip`, `.card`, dll.).
 - Semua halaman diuji tanpa overflow horizontal pada lebar 360 px.
+- Kontrol utama (CTA, chip filter, swatch pada detail produk, tombol qty) memakai area sentuh minimal 44 px; swatch kecil di kartu produk hanya berfungsi sebagai indikator.
+- Bagian kategori di beranda memakai grid 2 kolom (mobile) → 3 (tablet) → 5 (desktop).
 - Bagian sponsor dan testimoni masih berupa placeholder, siap diganti data nyata.
 - Invoice mendukung `window.print()` dengan gaya cetak khusus (`@media print`).
 - Tema dikunci ke mode terang; varian `dark:` Flowbite dinetralkan agar komponen tidak berubah gelap saat OS memakai dark mode.

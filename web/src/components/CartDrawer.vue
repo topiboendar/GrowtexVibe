@@ -9,7 +9,9 @@ import { useCartStore } from '@/stores/cart'
 const cart = useCartStore()
 const router = useRouter()
 
-const itemCount = computed(() => (cart.count === 1 ? '1 item' : `${cart.count} item`))
+const itemCount = computed(() =>
+  cart.totalItems === 1 ? '1 item' : `${cart.totalItems} item`,
+)
 
 function close() {
   cart.closeDrawer()
@@ -136,19 +138,19 @@ onBeforeUnmount(() => {
                   <div class="mt-2.5 flex items-center justify-between gap-2">
                     <div class="flex items-center rounded-full border border-line">
                       <button
-                        class="flex size-7 items-center justify-center text-muted transition-colors hover:text-ink disabled:opacity-40"
+                        class="flex size-10 items-center justify-center text-muted transition-colors hover:text-ink disabled:opacity-40"
                         aria-label="Kurangi jumlah"
                         @click="cart.decrement(item.key)"
                       >
-                        <Minus class="size-3" />
+                        <Minus class="size-3.5" />
                       </button>
-                      <span class="w-6 text-center text-xs font-semibold">{{ item.qty }}</span>
+                      <span class="w-7 text-center text-xs font-semibold">{{ item.qty }}</span>
                       <button
-                        class="flex size-7 items-center justify-center text-muted transition-colors hover:text-ink"
+                        class="flex size-10 items-center justify-center text-muted transition-colors hover:text-ink"
                         aria-label="Tambah jumlah"
                         @click="cart.increment(item.key)"
                       >
-                        <Plus class="size-3" />
+                        <Plus class="size-3.5" />
                       </button>
                     </div>
                     <p class="text-[13px] font-semibold">{{ formatIDR(item.price * item.qty) }}</p>

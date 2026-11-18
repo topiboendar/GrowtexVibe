@@ -195,7 +195,7 @@ onMounted(() => load())
 
     <template v-else>
       <!-- Mobile cards -->
-      <div class="mt-4 space-y-2.5 lg:hidden">
+      <div class="mt-4 space-y-2.5 md:hidden">
         <button
           v-for="order in filtered"
           :key="order.id"
@@ -222,13 +222,13 @@ onMounted(() => load())
       </div>
 
       <!-- Desktop table -->
-      <div class="mt-4 hidden overflow-hidden rounded-2xl border border-line bg-surface lg:block">
+      <div class="mt-4 hidden overflow-hidden rounded-2xl border border-line bg-surface md:block">
         <table class="w-full text-left text-[12.5px]">
           <thead class="border-b border-line bg-canvas/60 text-[10px] tracking-[0.1em] text-muted uppercase">
             <tr>
               <th class="px-4 py-3 font-semibold">Invoice</th>
               <th class="px-4 py-3 font-semibold">Pelanggan</th>
-              <th class="px-4 py-3 font-semibold">Tanggal</th>
+              <th class="hidden px-4 py-3 font-semibold lg:table-cell">Tanggal</th>
               <th class="px-4 py-3 font-semibold">Item</th>
               <th class="px-4 py-3 font-semibold">Total</th>
               <th class="px-4 py-3 font-semibold">Status</th>
@@ -247,7 +247,7 @@ onMounted(() => load())
                 <p class="font-medium">{{ order.customer.name }}</p>
                 <p class="text-[11px] text-muted">{{ order.customer.city }}</p>
               </td>
-              <td class="px-4 py-3 text-muted">{{ formatDate(order.createdAt) }}</td>
+              <td class="hidden px-4 py-3 text-muted lg:table-cell">{{ formatDate(order.createdAt) }}</td>
               <td class="px-4 py-3 text-muted">{{ order.items.length }}</td>
               <td class="px-4 py-3 font-semibold">{{ formatIDR(order.total) }}</td>
               <td class="px-4 py-3">

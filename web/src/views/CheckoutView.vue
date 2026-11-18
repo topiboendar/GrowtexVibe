@@ -89,7 +89,7 @@ async function submitOrder() {
       payment: payment.value,
     })
 
-    cart.clear()
+    cart.clearCart()
     router.push({ name: 'invoice', params: { id: order.id } })
   } catch (error) {
     submitError.value = error instanceof Error ? error.message : 'Gagal membuat pesanan.'
@@ -291,7 +291,7 @@ async function submitOrder() {
         <div class="card p-4 sm:p-5">
           <div class="flex items-center justify-between">
             <h2 class="text-sm font-semibold tracking-tight">Ringkasan pesanan</h2>
-            <span class="badge">{{ cart.count }} item</span>
+            <span class="badge">{{ cart.totalItems }} item</span>
           </div>
 
           <ul class="mt-4 space-y-3">

@@ -209,7 +209,7 @@
   }
 
   .chip {
-    @apply inline-flex min-h-9 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-medium text-muted transition-colors hover:border-ink/25 hover:text-ink;
+    @apply inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-medium text-muted transition-colors hover:border-ink/25 hover:text-ink;
   }
 
   .chip-active {

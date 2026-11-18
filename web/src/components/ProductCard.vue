@@ -46,14 +46,14 @@ function quickAdd() {
         <GarmentVisual :color="activeColor" :type="product.category" />
       </div>
 
-      <div class="absolute top-3 left-3 z-20 flex flex-col items-start gap-1.5">
-        <span v-if="product.isNew" class="badge-ink">Baru</span>
+      <div class="absolute top-3 left-3 z-20">
         <span v-if="discount > 0" class="badge-warn">-{{ discount }}%</span>
+        <span v-else-if="product.isNew" class="badge-ink">Baru</span>
       </div>
 
       <button
         type="button"
-        class="absolute right-3 bottom-3 z-20 flex size-10 items-center justify-center rounded-full border border-line bg-surface/90 text-ink shadow-soft backdrop-blur transition-all hover:bg-accent hover:text-white active:scale-95"
+        class="absolute right-3 bottom-3 z-20 flex size-11 items-center justify-center rounded-full border border-line bg-surface/90 text-ink shadow-soft backdrop-blur transition-all hover:bg-accent hover:text-white active:scale-95"
         aria-label="Tambah cepat ke keranjang"
         @click.prevent="quickAdd"
       >
