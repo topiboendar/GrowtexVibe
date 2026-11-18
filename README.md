@@ -60,6 +60,20 @@ Server berjalan di `http://localhost:3000`.
 | `bun run db:push`     | Push schema langsung ke database (tanpa file migrasi) |
 | `bun run db:studio`   | Buka Drizzle Studio                                  |
 
+## Frontend (GrowtexStore)
+
+Storefront dan dashboard admin berada di `web/` — **Vue 3 + Vite + TypeScript + Tailwind CSS v4 + Flowbite**.
+
+```bash
+cd web
+bun install
+bun run dev
+```
+
+Dev server berjalan di `http://localhost:5173` dan memproxy `/api` ke backend `http://localhost:3000`. Selama endpoint backend belum tersedia, frontend otomatis memakai data demo di `localStorage` (akun admin: `admin@growtexstore.id` / `admin123`).
+
+Detail struktur, rute, dan kontrak API ada di [`web/README.md`](./web/README.md).
+
 ## Struktur Project
 
 ```text
