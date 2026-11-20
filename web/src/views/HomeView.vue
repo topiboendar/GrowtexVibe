@@ -14,14 +14,17 @@ import {
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import {
   CATEGORIES,
   COLOR_SWATCHES,
+  colorImage,
   formatIDR,
+  POPULAR_SWATCHES,
+  productColor,
   productsApi,
-  type CategoryId,
+  SEED_PRODUCTS,
   type Product,
 } from '@/api'
 
@@ -31,7 +34,29 @@ const router = useRouter()
 const products = ref<Product[]>([])
 const loading = ref(true)
 const activeColor = ref('')
-const heroColor = ref('#e6dcc8')
+
+const heroProduct =
+  SEED_PRODUCTS.find((product) => product.id === 'new-states-apparel-premium-cotton-t-shirt-7200-99') ??
+  SEED_PRODUCTS[0]!
+const heroColor = ref(heroProduct.colors[0]?.name ?? '')
+const heroSwatches = computed(() => heroProduct.colors.slice(0, 6))
+const heroImage = computed(() =>
+  colorImage(productColor(heroProduct, heroColor.value), 'fullBody'),
+)
+
+const categoryPreview = Object.fromEntries(
+  CATEGORIES.map((category) => {
+    const product = SEED_PRODUCTS.find((item) => item.category === category.id)
+    return [category.id, colorImage(product?.colors[0], 'front')]
+  }),
+) as Record<Product['category'], string>
+
+const featuredColors = computed(() => COLOR_SWATCHES.filter((color) => color.swatchImage).slice(0, 18))
+
+const dtfPreview = colorImage(
+  SEED_PRODUCTS.find((product) => product.category === 'kaos')?.colors[0],
+  'front',
+)
 
 const activeCategory = computed(() => {
   const value = route.query.kategori
@@ -144,14 +169,6 @@ const testimonials = [
   },
 ]
 
-const categoryColors: Record<CategoryId, string> = {
-  kaos: '#f4f2ec',
-  polo: '#1e2a44',
-  hoodie: '#5c6249',
-  oversized: '#16161a',
-  totebag: '#e6dcc8',
-}
-
 onMounted(async () => {
   try {
     products.value = await productsApi.list()
@@ -219,8 +236,12 @@ onMounted(async () => {
           <div
             class="relative overflow-hidden rounded-[2rem] border border-line bg-gradient-to-br from-cream via-cream to-sand/70"
           >
-            <div class="aspect-[4/5] w-full p-6 sm:p-10">
-              <GarmentVisual :color="heroColor" type="kaos" />
+            <div class="aspect-[4/5] w-full">
+              <ProductVisual
+                :src="heroImage"
+                :alt="`${heroProduct.name} — ${heroColor}`"
+                eager
+              />
             </div>
 
             <div
@@ -228,7 +249,7 @@ onMounted(async () => {
             >
               <p class="text-[9.5px] font-semibold tracking-[0.14em] text-muted uppercase">Rating</p>
               <p class="mt-0.5 flex items-center gap-1 text-sm font-bold">
-                4.9
+                {{ heroProduct.rating.toFixed(1) }}
                 <Star class="size-3 fill-amber-400 text-amber-400" />
               </p>
             </div>
@@ -237,31 +258,41 @@ onMounted(async () => {
               class="absolute inset-x-4 bottom-4 rounded-2xl border border-line/70 bg-surface/95 p-3.5 backdrop-blur"
             >
               <div class="flex items-start justify-between gap-3">
-                <div>
+                <div class="min-w-0">
                   <p class="text-[9.5px] font-semibold tracking-[0.14em] text-muted uppercase">
                     Best seller
                   </p>
-                  <p class="mt-0.5 text-sm font-semibold">Kaos Combed 30s</p>
-                  <p class="mt-1 text-[13px] font-semibold text-accent">{{ formatIDR(65000) }}</p>
+                  <p class="mt-0.5 truncate text-sm font-semibold">{{ heroProduct.name }}</p>
+                  <p class="mt-1 text-[13px] font-semibold text-accent">
+                    {{ formatIDR(heroProduct.price) }}
+                  </p>
                 </div>
                 <div class="flex flex-wrap justify-end gap-1.5">
                   <button
-                    v-for="color in COLOR_SWATCHES.slice(0, 6)"
-                    :key="color.hex"
+                    v-for="color in heroSwatches"
+                    :key="color.name"
                     type="button"
                     class="group -m-2.5 flex size-11 items-center justify-center rounded-full"
                     :aria-label="`Warna ${color.name}`"
-                    @click="heroColor = color.hex"
+                    @click="heroColor = color.name"
                   >
                     <span
-                      class="size-5 rounded-full border transition-transform group-hover:scale-110"
+                      class="size-5 overflow-hidden rounded-full border transition-transform group-hover:scale-110"
                       :class="
-                        heroColor === color.hex
+                        heroColor === color.name
                           ? 'border-ink ring-1 ring-ink/20 ring-offset-2 ring-offset-surface'
                           : 'border-ink/15'
                       "
                       :style="{ backgroundColor: color.hex }"
-                    />
+                    >
+                      <img
+                        v-if="color.swatchImage"
+                        :src="color.swatchImage"
+                        alt=""
+                        class="size-full object-cover"
+                        loading="lazy"
+                      />
+                    </span>
                   </button>
                 </div>
               </div>
@@ -299,8 +330,8 @@ onMounted(async () => {
             <p class="eyebrow">Kategori</p>
             <h2 class="h-section mt-2">Pakaian polos</h2>
             <p class="lead mt-2 max-w-md">
-              Kaos, polo, hoodie, oversized, sampai totebag — semua tersedia satuan maupun partai
-              besar.
+              Kaos, polo, hoodie, jaket, sport dri-fit, sampai headwear — semua tersedia satuan
+              maupun partai besar.
             </p>
           </div>
           <RouterLink
@@ -319,11 +350,12 @@ onMounted(async () => {
             :to="{ name: 'home', query: { kategori: category.id }, hash: '#koleksi' }"
             class="group flex flex-col overflow-hidden rounded-3xl border border-line bg-surface transition-all duration-300 hover:-translate-y-0.5 hover:border-ink/15 hover:shadow-soft"
           >
-            <div class="relative overflow-hidden bg-gradient-to-br from-cream to-sand/60">
-              <div
-                class="aspect-[4/5] w-full p-3 transition-transform duration-500 group-hover:scale-[1.04]"
-              >
-                <GarmentVisual :color="categoryColors[category.id]" :type="category.id" />
+            <div class="relative overflow-hidden bg-[#e0e0e0]">
+              <div class="aspect-[4/5] w-full transition-transform duration-500 group-hover:scale-[1.04]">
+                <ProductVisual
+                  :src="categoryPreview[category.id]"
+                  :alt="category.label"
+                />
               </div>
             </div>
             <div class="flex items-center justify-between gap-2 border-t border-line px-3.5 py-3">
@@ -427,8 +459,8 @@ onMounted(async () => {
         <div class="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
           <span class="text-[11px] font-semibold tracking-wider text-muted uppercase">Warna</span>
           <button
-            v-for="color in COLOR_SWATCHES"
-            :key="color.hex"
+            v-for="color in POPULAR_SWATCHES"
+            :key="color.name"
             type="button"
             class="group -mx-2.5 flex size-11 items-center justify-center rounded-full"
             :title="color.name"
@@ -437,14 +469,22 @@ onMounted(async () => {
             @click="pickColor(color.hex)"
           >
             <span
-              class="size-6 rounded-full border transition-transform group-hover:scale-110"
+              class="size-6 overflow-hidden rounded-full border transition-transform group-hover:scale-110"
               :class="
                 activeColor.toLowerCase() === color.hex.toLowerCase()
                   ? 'border-ink ring-1 ring-ink/20 ring-offset-2'
                   : 'border-ink/15'
               "
               :style="{ backgroundColor: color.hex }"
-            />
+            >
+              <img
+                v-if="color.swatchImage"
+                :src="color.swatchImage"
+                alt=""
+                class="size-full object-cover"
+                loading="lazy"
+              />
+            </span>
           </button>
           <button
             v-if="hasFilter"
@@ -498,17 +538,27 @@ onMounted(async () => {
 
         <div class="mt-7 grid grid-cols-3 gap-2.5 sm:grid-cols-5 sm:gap-3 lg:grid-cols-9">
           <button
-            v-for="color in COLOR_SWATCHES"
-            :key="color.hex"
+            v-for="color in featuredColors"
+            :key="color.name"
             type="button"
             class="group flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface px-2 py-3.5 transition-colors hover:border-ink/20"
             @click="pickColor(color.hex)"
           >
             <span
-              class="size-9 rounded-full border border-ink/10 shadow-inner transition-transform group-hover:scale-105"
+              class="size-10 overflow-hidden rounded-full border border-ink/10 shadow-inner transition-transform group-hover:scale-105"
               :style="{ backgroundColor: color.hex }"
-            />
-            <span class="text-[11px] font-medium text-muted group-hover:text-ink">{{ color.name }}</span>
+            >
+              <img
+                v-if="color.swatchImage"
+                :src="color.swatchImage"
+                :alt="`Swatch ${color.name}`"
+                class="size-full object-cover"
+                loading="lazy"
+              />
+            </span>
+            <span class="max-w-full truncate text-[11px] font-medium text-muted group-hover:text-ink">
+              {{ color.name }}
+            </span>
           </button>
         </div>
       </div>
@@ -545,7 +595,7 @@ onMounted(async () => {
 
           <div class="mt-7 flex flex-col gap-2.5 sm:flex-row">
             <RouterLink
-              :to="{ name: 'product-detail', params: { id: 'kaos-combed-30s' } }"
+              :to="{ name: 'product-detail', params: { id: 'new-states-apparel-premium-cotton-t-shirt-7200-99' } }"
               class="btn btn-light btn-lg"
             >
               Coba custom sekarang
@@ -560,7 +610,7 @@ onMounted(async () => {
         <div class="relative mx-auto w-full max-w-sm lg:max-w-none">
           <div class="relative overflow-hidden rounded-[2rem] bg-white/[0.06] p-6 sm:p-8">
             <div class="aspect-[4/5] w-full">
-              <GarmentVisual color="#f4f2ec" type="kaos" />
+              <ProductVisual :src="dtfPreview" alt="Pratinjau kaos untuk sablon DTF" />
             </div>
             <div class="absolute inset-x-6 top-6 rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2 backdrop-blur">
               <p class="text-[9.5px] font-semibold tracking-[0.14em] text-cream/60 uppercase">
@@ -649,7 +699,7 @@ onMounted(async () => {
           </p>
           <div class="mt-6 flex flex-col justify-center gap-2.5 sm:flex-row">
             <RouterLink
-              :to="{ name: 'product-detail', params: { id: 'kaos-combed-30s' } }"
+              :to="{ name: 'product-detail', params: { id: 'new-states-apparel-premium-cotton-t-shirt-7200-99' } }"
               class="btn btn-primary btn-lg"
             >
               Pesan sekarang

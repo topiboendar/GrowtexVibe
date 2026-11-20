@@ -2,7 +2,7 @@
 import { ArrowLeft, ArrowRight, Loader2, Lock, ShieldCheck, Truck } from 'lucide-vue-next'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import {
   dtfDescription,
   formatIDR,
@@ -296,8 +296,8 @@ async function submitOrder() {
 
           <ul class="mt-4 space-y-3">
             <li v-for="item in cart.items" :key="item.key" class="flex gap-3">
-              <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-cream">
-                <GarmentVisual :color="item.colorHex" :type="item.category" />
+              <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-[#e0e0e0]">
+                <ProductVisual :src="item.image" :alt="item.name" />
               </div>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-[12.5px] font-semibold">{{ item.name }}</p>

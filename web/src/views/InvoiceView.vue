@@ -11,7 +11,7 @@ import {
 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import {
   dtfDescription,
   formatDate,
@@ -182,8 +182,8 @@ watch(
 
           <ul class="divide-y divide-line">
             <li v-for="item in order.items" :key="item.key" class="flex gap-3 px-4 py-3.5 sm:px-5">
-              <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-cream">
-                <GarmentVisual :color="item.colorHex" :type="item.category" />
+              <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-[#e0e0e0]">
+                <ProductVisual :src="item.image" :alt="item.name" />
               </div>
               <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-2">

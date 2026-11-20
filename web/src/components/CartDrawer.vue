@@ -2,7 +2,7 @@
 import { ArrowRight, Minus, Plus, ShoppingBag, Trash2, X } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import { dtfDescription, formatIDR } from '@/api'
 import { useCartStore } from '@/stores/cart'
 
@@ -111,8 +111,8 @@ onBeforeUnmount(() => {
                 :key="item.key"
                 class="flex gap-3 rounded-2xl border border-line bg-surface p-3"
               >
-                <div class="size-20 shrink-0 overflow-hidden rounded-xl bg-cream">
-                  <GarmentVisual :color="item.colorHex" :type="item.category" />
+                <div class="size-20 shrink-0 overflow-hidden rounded-xl bg-[#e0e0e0]">
+                  <ProductVisual :src="item.image" :alt="item.name" />
                 </div>
 
                 <div class="min-w-0 flex-1">
