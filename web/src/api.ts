@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import productCatalog from '@/data/products.json'
 
 /* ----------------------------------------------------------------------------
  * API client untuk backend ElysiaJS.
@@ -9,10 +10,11 @@ import { reactive } from 'vue'
  * -------------------------------------------------------------------------- */
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
+const AUTO_DEMO = !BASE_URL && (import.meta.env.PROD || import.meta.env.VITE_DEMO_MODE === 'true')
 
 export const apiStatus = reactive({
-  demo: false,
-  checked: false,
+  demo: AUTO_DEMO,
+  checked: AUTO_DEMO,
   lastError: '',
 })
 
@@ -99,7 +101,8 @@ async function withFallback<T>(call: () => Promise<T>, fallback: () => T | Promi
  * -------------------------------------------------------------------------- */
 
 export type Role = 'customer' | 'admin'
-export type CategoryId = 'kaos' | 'polo' | 'hoodie' | 'oversized' | 'totebag'
+export type CategoryId = 'kaos' | 'polo' | 'hoodie' | 'sport' | 'headwear'
+export type ProductView = 'front' | 'halfBody' | 'fullBody' | 'back'
 
 export interface User {
   id: string
@@ -114,9 +117,25 @@ export interface AuthSession {
   user: User
 }
 
+export interface ProductColorImages {
+  /** Foto produk tampak depan (flat product). */
+  front: string
+  /** Foto model setengah badan. */
+  halfBody?: string
+  /** Foto model seluruh badan beserta outfit. */
+  fullBody?: string
+  /** Foto model tampak belakang. */
+  back?: string
+  /** Foto swatch tekstur kain. */
+  swatch?: string
+}
+
 export interface ProductColor {
   name: string
   hex: string
+  /** Gambar swatch tekstur kain asli dari Cititex. */
+  swatchImage?: string
+  images?: ProductColorImages
 }
 
 export interface Product {
@@ -136,6 +155,8 @@ export interface Product {
   reviews: number
   popular: boolean
   isNew: boolean
+  /** Gambar tabel panduan ukuran produk. */
+  sizeGuideUrl?: string
 }
 
 export type ProductInput = Omit<Product, 'id' | 'rating' | 'reviews' | 'popular' | 'isNew'> &
@@ -167,6 +188,8 @@ export interface CartItem {
   price: number
   color: string
   colorHex: string
+  colorSwatch?: string
+  image?: string
   size: string
   qty: number
   dtf: DtfOption | null
@@ -210,11 +233,11 @@ export interface NewOrderInput {
  * -------------------------------------------------------------------------- */
 
 export const CATEGORIES: Category[] = [
-  { id: 'kaos', label: 'Kaos Polos', caption: 'Cotton combed 24s–30s' },
-  { id: 'polo', label: 'Polo Shirt', caption: 'Pique lacoste premium' },
-  { id: 'hoodie', label: 'Hoodie & Crewneck', caption: 'Fleece 280 gsm' },
-  { id: 'oversized', label: 'Oversized', caption: 'Boxy fit 240 gsm' },
-  { id: 'totebag', label: 'Totebag', caption: 'Kanvas 12 oz' },
+  { id: 'kaos', label: 'Kaos', caption: 'Premium cotton 145–210 gsm' },
+  { id: 'polo', label: 'Polo Shirt', caption: 'Pique & easy care' },
+  { id: 'hoodie', label: 'Hoodie & Jacket', caption: 'Fleece 260–280 gsm' },
+  { id: 'sport', label: 'Sport Dri-Fit', caption: 'Cepat kering & ringan' },
+  { id: 'headwear', label: 'Headwear', caption: 'Snapback, trucker & dad hat' },
 ]
 
 export const SIZE_OPTIONS = ['S', 'M', 'L', 'XL', 'XXL']
@@ -322,177 +345,79 @@ export function formatDate(value: string) {
  * Data katalog (seed)
  * -------------------------------------------------------------------------- */
 
-const PALETTE = {
-  putih: { name: 'Putih', hex: '#f4f2ec' },
-  hitam: { name: 'Hitam', hex: '#16161a' },
-  navy: { name: 'Navy', hex: '#1e2a44' },
-  sage: { name: 'Sage', hex: '#9caf9a' },
-  krem: { name: 'Krem', hex: '#e6dcc8' },
-  marun: { name: 'Marun', hex: '#6b2233' },
-  abu: { name: 'Abu', hex: '#b6b4ae' },
-  olive: { name: 'Olive', hex: '#5c6249' },
-  dusty: { name: 'Dusty Blue', hex: '#93a3b8' },
+export const SEED_PRODUCTS = productCatalog as unknown as Product[]
+
+/**
+ * Swatch warna global untuk filter beranda & form admin.
+ * Diambil dari varian warna asli katalog Cititex, diurutkan dari terang ke gelap.
+ */
+export const COLOR_SWATCHES: ProductColor[] = (() => {
+  const map = new Map<string, ProductColor>()
+  for (const product of SEED_PRODUCTS) {
+    for (const color of product.colors) {
+      const key = color.name.toLowerCase()
+      const existing = map.get(key)
+      if (!existing || (!existing.swatchImage && color.swatchImage)) {
+        map.set(key, {
+          name: color.name,
+          hex: color.hex,
+          swatchImage: color.swatchImage,
+        })
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => luminance(a.hex) - luminance(b.hex))
+})()
+
+/**
+ * Warna yang paling banyak tersedia di katalog (top 18).
+ * Dipakai untuk strip filter beranda agar tidak menampilkan puluhan swatch sekaligus.
+ */
+export const POPULAR_SWATCHES: ProductColor[] = (() => {
+  const usage = new Map<string, number>()
+  for (const product of SEED_PRODUCTS) {
+    for (const color of product.colors) {
+      const key = color.name.toLowerCase()
+      usage.set(key, (usage.get(key) ?? 0) + 1)
+    }
+  }
+  return [...COLOR_SWATCHES]
+    .sort(
+      (a, b) =>
+        (usage.get(b.name.toLowerCase()) ?? 0) - (usage.get(a.name.toLowerCase()) ?? 0) ||
+        luminance(a.hex) - luminance(b.hex),
+    )
+    .slice(0, 18)
+})()
+
+function luminance(hex: string) {
+  const value = hex.replace('#', '')
+  if (value.length !== 6) return 0
+  const r = parseInt(value.slice(0, 2), 16)
+  const g = parseInt(value.slice(2, 4), 16)
+  const b = parseInt(value.slice(4, 6), 16)
+  return 0.299 * r + 0.587 * g + 0.114 * b
 }
 
-export const COLOR_SWATCHES: ProductColor[] = Object.values(PALETTE)
+/** Gambar untuk satu warna & sudut pandang, dengan fallback ke tampak depan. */
+export function colorImage(color?: ProductColor | null, view: ProductView = 'front') {
+  if (!color?.images) return color?.swatchImage
+  return color.images[view] ?? color.images.front
+}
 
-const SEED_PRODUCTS: Product[] = [
-  {
-    id: 'kaos-combed-30s',
-    name: 'Kaos Combed 30s',
-    category: 'kaos',
-    price: 65_000,
-    compareAtPrice: 79_000,
-    description:
-      'Kaos polos andalan dengan serat combed halus. Adem, tidak transparan, dan jatuh rapi di badan — cocok untuk daily wear maupun basis sablon DTF.',
-    material: '100% Cotton Combed 30s',
-    weight: '150 gsm',
-    care: 'Cuci mesin suhu dingin, jangan pakai pemutih, setrika suhu sedang.',
-    colors: [PALETTE.putih, PALETTE.hitam, PALETTE.navy, PALETTE.sage, PALETTE.krem, PALETTE.abu],
-    sizes: SIZE_OPTIONS,
-    stock: 240,
-    rating: 4.9,
-    reviews: 1284,
-    popular: true,
-    isNew: false,
-  },
-  {
-    id: 'kaos-combed-24s',
-    name: 'Kaos Combed 24s',
-    category: 'kaos',
-    price: 75_000,
-    description:
-      'Sedikit lebih tebal dengan body yang lebih kokoh. Pilihan favorit untuk seragam komunitas, event, dan kustom partai besar.',
-    material: '100% Cotton Combed 24s',
-    weight: '175 gsm',
-    care: 'Cuci mesin suhu dingin, balik sebelum disetrika.',
-    colors: [PALETTE.putih, PALETTE.hitam, PALETTE.marun, PALETTE.olive, PALETTE.dusty],
-    sizes: SIZE_OPTIONS,
-    stock: 186,
-    rating: 4.8,
-    reviews: 942,
-    popular: true,
-    isNew: false,
-  },
-  {
-    id: 'kaos-oversized-boxy',
-    name: 'Kaos Oversized Boxy',
-    category: 'oversized',
-    price: 110_000,
-    compareAtPrice: 129_000,
-    description:
-      'Potongan boxy dengan drop shoulder yang lebar dan nyaman. Silhouette modern untuk look yang lebih tenang dan berkelas.',
-    material: 'Cotton Combed 24s Heavy',
-    weight: '240 gsm',
-    care: 'Cuci terpisah pada putaran lembut agar warna tetap pekat.',
-    colors: [PALETTE.hitam, PALETTE.putih, PALETTE.sage, PALETTE.dusty, PALETTE.krem],
-    sizes: ['M', 'L', 'XL', 'XXL'],
-    stock: 132,
-    rating: 4.9,
-    reviews: 418,
-    popular: true,
-    isNew: true,
-  },
-  {
-    id: 'polo-pique-essential',
-    name: 'Polo Pique Essential',
-    category: 'polo',
-    price: 145_000,
-    description:
-      'Polo pique dengan kerah rapi dan sirkulasi udara baik. Presentasi profesional tanpa terlihat kaku.',
-    material: 'Cotton Pique Lacoste',
-    weight: '200 gsm',
-    care: 'Jangan gunakan pemutih, keringkan dengan cara diangin-anginkan.',
-    colors: [PALETTE.navy, PALETTE.putih, PALETTE.hitam, PALETTE.abu],
-    sizes: ['S', 'M', 'L', 'XL'],
-    stock: 88,
-    rating: 4.7,
-    reviews: 231,
-    popular: true,
-    isNew: false,
-  },
-  {
-    id: 'hoodie-fleece-premium',
-    name: 'Hoodie Fleece Premium',
-    category: 'hoodie',
-    price: 235_000,
-    compareAtPrice: 269_000,
-    description:
-      'Hoodie fleece tebal dengan tudung dua lapis dan kantong kanguru. Hangat, tidak berat, dan tetap mempertahankan bentuk.',
-    material: 'Cotton Fleece 280 gsm',
-    weight: '280 gsm',
-    care: 'Balik sebelum dicuci, hindari pengeringan suhu tinggi.',
-    colors: [PALETTE.hitam, PALETTE.krem, PALETTE.olive, PALETTE.navy],
-    sizes: ['M', 'L', 'XL', 'XXL'],
-    stock: 64,
-    rating: 4.9,
-    reviews: 307,
-    popular: true,
-    isNew: false,
-  },
-  {
-    id: 'crewneck-fleece',
-    name: 'Crewneck Fleece',
-    category: 'hoodie',
-    price: 195_000,
-    description:
-      'Versi tanpa tudung yang lebih minimalis. Rib leher kokoh, jatuh sempurna untuk layering maupun dipakai tunggal.',
-    material: 'Cotton Fleece 260 gsm',
-    weight: '260 gsm',
-    care: 'Cuci dengan suhu maksimal 30°C.',
-    colors: [PALETTE.abu, PALETTE.hitam, PALETTE.sage, PALETTE.marun],
-    sizes: ['S', 'M', 'L', 'XL'],
-    stock: 71,
-    rating: 4.8,
-    reviews: 188,
-    popular: false,
-    isNew: true,
-  },
-  {
-    id: 'kaos-raglan',
-    name: 'Kaos Raglan',
-    category: 'kaos',
-    price: 85_000,
-    description:
-      'Lengan raglan dengan kombinasi dua warna yang sporty namun tetap bersih. Nyaman untuk aktivitas harian.',
-    material: 'Cotton Combed 30s + Poly',
-    weight: '160 gsm',
-    care: 'Cuci bagian dalam ke luar untuk menjaga kontras warna.',
-    colors: [PALETTE.putih, PALETTE.navy, PALETTE.hitam],
-    sizes: ['S', 'M', 'L', 'XL'],
-    stock: 96,
-    rating: 4.6,
-    reviews: 97,
-    popular: false,
-    isNew: false,
-  },
-  {
-    id: 'totebag-kanvas',
-    name: 'Totebag Kanvas 12 oz',
-    category: 'totebag',
-    price: 55_000,
-    description:
-      'Totebag kanvas tebal dengan jahitan ganda. Kuat menahan beban dan ideal untuk merchandise komunitas.',
-    material: 'Kanvas 12 oz',
-    weight: '12 oz',
-    care: 'Cuci tangan, jangan direndam terlalu lama.',
-    colors: [PALETTE.krem, PALETTE.hitam, PALETTE.olive],
-    sizes: ['All Size'],
-    stock: 210,
-    rating: 4.7,
-    reviews: 143,
-    popular: false,
-    isNew: true,
-  },
-]
+/** Cari warna pada produk, fallback ke warna pertama. */
+export function productColor(product: Product | null | undefined, name: string) {
+  if (!product) return undefined
+  return product.colors.find((color) => color.name === name) ?? product.colors[0]
+}
 
 /* ----------------------------------------------------------------------------
  * Local storage helpers
  * -------------------------------------------------------------------------- */
 
 const STORAGE = {
-  products: 'gv:products',
-  orders: 'gv:orders',
+  products: 'gv:products:v2',
+  orders: 'gv:orders:v2',
   users: 'gv:users',
   session: 'gv:session',
 }
@@ -573,7 +498,10 @@ function seedOrdersIfEmpty() {
     qty: number,
     dtf: DtfOption | null,
   ): CartItem => {
-    const color = product.colors[colorIndex] ?? product.colors[0] ?? PALETTE.putih
+    const color = product.colors[colorIndex] ?? product.colors[0] ?? {
+      name: 'Putih',
+      hex: '#d0cfd6',
+    }
     const dtfPrice = dtfUnitPrice(dtf)
     return {
       key: makeId('item'),
@@ -584,6 +512,8 @@ function seedOrdersIfEmpty() {
       price: product.price + dtfPrice,
       color: color.name,
       colorHex: color.hex,
+      colorSwatch: color.swatchImage,
+      image: colorImage(color),
       size,
       qty,
       dtf,

@@ -10,7 +10,7 @@ import {
 } from 'lucide-vue-next'
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import {
   dtfDescription,
   formatDate,
@@ -302,8 +302,8 @@ onMounted(() => load())
 
           <ul class="divide-y divide-line rounded-2xl border border-line">
             <li v-for="item in selected.items" :key="item.key" class="flex gap-3 p-3">
-              <div class="size-14 shrink-0 overflow-hidden rounded-xl bg-cream">
-                <GarmentVisual :color="item.colorHex" :type="item.category" />
+              <div class="size-14 shrink-0 overflow-hidden rounded-xl bg-[#e0e0e0]">
+                <ProductVisual :src="item.image" :alt="item.name" />
               </div>
               <div class="min-w-0 flex-1">
                 <p class="truncate text-[12.5px] font-semibold">{{ item.name }}</p>

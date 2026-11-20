@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import {
   COLOR_SWATCHES,
+  colorImage,
   dtfUnitPrice,
   FREE_SHIPPING_MIN,
   shippingFor,
@@ -10,7 +11,7 @@ import {
   type Product,
 } from '@/api'
 
-const STORAGE_KEY = 'gv:cart'
+const STORAGE_KEY = 'gv:cart:v2'
 
 interface AddOptions {
   color: string
@@ -93,6 +94,7 @@ export const useCartStore = defineStore('cart', () => {
     const price = product.price + dtfUnitPrice(dtf)
     const qty = Math.max(1, options.qty ?? 1)
     const key = itemKey(product.id, color.name, options.size, dtf)
+    const image = colorImage(color)
 
     const existing = items.value.find((item) => item.key === key)
     if (existing) {
@@ -100,6 +102,8 @@ export const useCartStore = defineStore('cart', () => {
       existing.price = price
       existing.basePrice = product.price
       existing.colorHex = color.hex
+      existing.colorSwatch = color.swatchImage
+      existing.image = image
     } else {
       items.value.push({
         key,
@@ -110,6 +114,8 @@ export const useCartStore = defineStore('cart', () => {
         price,
         color: color.name,
         colorHex: color.hex,
+        colorSwatch: color.swatchImage,
+        image,
         size: options.size,
         qty,
         dtf,

@@ -9,19 +9,22 @@ import {
   RotateCcw,
   ShoppingBag,
   Truck,
+  X,
 } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import DtfCustomizer from '@/components/DtfCustomizer.vue'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import ProductCard from '@/components/ProductCard.vue'
 import {
   CATEGORIES,
+  colorImage,
   dtfUnitPrice,
   formatIDR,
   productsApi,
   type DtfOption,
   type Product,
+  type ProductView,
 } from '@/api'
 import { useCartStore } from '@/stores/cart'
 
@@ -38,6 +41,8 @@ const selectedSize = ref('')
 const qty = ref(1)
 const added = ref(false)
 const sizeError = ref('')
+const galleryView = ref<ProductView>('front')
+const sizeGuideOpen = ref(false)
 
 const dtf = ref<DtfOption>({ enabled: false, position: 'depan', size: 'a4' })
 
@@ -48,6 +53,20 @@ const categoryLabel = computed(
 const activeColor = computed(
   () => product.value?.colors.find((color) => color.name === selectedColor.value) ?? product.value?.colors[0],
 )
+
+const galleryOptions = computed(() => {
+  const images = activeColor.value?.images
+  const options: { value: ProductView; label: string }[] = [
+    { value: 'front', label: 'Produk' },
+    { value: 'halfBody', label: 'Model' },
+    { value: 'fullBody', label: 'Outfit' },
+    { value: 'back', label: 'Belakang' },
+  ]
+  return options.filter((option) => Boolean(images?.[option.value]))
+})
+
+const galleryImage = computed(() => colorImage(activeColor.value, galleryView.value))
+const garmentBackImage = computed(() => colorImage(activeColor.value, 'back'))
 
 const dtfPrice = computed(() => dtfUnitPrice(dtf.value))
 const unitPrice = computed(() => (product.value?.price ?? 0) + dtfPrice.value)
@@ -66,6 +85,8 @@ async function load(id: string) {
     selectedColor.value = data.colors[0]?.name ?? ''
     selectedSize.value = data.sizes.length === 1 ? data.sizes[0]! : ''
     qty.value = 1
+    galleryView.value = 'front'
+    sizeGuideOpen.value = false
     dtf.value = { enabled: false, position: 'depan', size: 'a4' }
 
     const all = await productsApi.list()
@@ -107,6 +128,15 @@ watch(
   () => route.params.id,
   (id) => {
     if (id) load(String(id))
+  },
+)
+
+watch(
+  () => activeColor.value?.name,
+  () => {
+    if (!galleryOptions.value.some((option) => option.value === galleryView.value)) {
+      galleryView.value = 'front'
+    }
   },
 )
 </script>
@@ -156,16 +186,38 @@ watch(
       <div v-else-if="product" class="mt-5 grid gap-8 lg:grid-cols-2 lg:gap-14">
         <!-- Gallery -->
         <div class="min-w-0 lg:sticky lg:top-24 lg:self-start">
-          <div class="relative overflow-hidden rounded-[2rem] border border-line bg-gradient-to-br from-cream to-sand/60">
-            <div class="aspect-[4/5] w-full p-6 sm:p-10">
-              <GarmentVisual
-                :color="activeColor?.hex ?? '#e6dcc8'"
-                :type="product.category"
+          <div class="relative overflow-hidden rounded-[2rem] border border-line bg-[#e0e0e0]">
+            <div class="aspect-[4/5] w-full">
+              <ProductVisual
+                :src="galleryImage"
+                :alt="`${product.name} — ${selectedColor}`"
+                eager
               />
             </div>
             <div class="absolute top-4 left-4 flex flex-col gap-1.5">
               <span v-if="product.isNew" class="badge-ink">Baru</span>
               <span class="badge">{{ product.weight }}</span>
+            </div>
+
+            <!-- View switcher -->
+            <div
+              v-if="galleryOptions.length > 1"
+              class="absolute inset-x-0 bottom-0 flex justify-center gap-1.5 bg-gradient-to-t from-ink/45 to-transparent p-3"
+            >
+              <button
+                v-for="option in galleryOptions"
+                :key="option.value"
+                type="button"
+                class="rounded-full px-3 py-1.5 text-[10.5px] font-semibold transition-colors"
+                :class="
+                  galleryView === option.value
+                    ? 'bg-surface text-ink shadow-soft'
+                    : 'bg-white/15 text-white backdrop-blur hover:bg-white/25'
+                "
+                @click="galleryView = option.value"
+              >
+                {{ option.label }}
+              </button>
             </div>
           </div>
 
@@ -175,19 +227,27 @@ watch(
               v-for="color in product.colors"
               :key="color.name"
               type="button"
-              class="relative w-16 shrink-0 overflow-hidden rounded-xl border bg-cream transition-colors sm:w-20"
+              class="relative w-16 shrink-0 overflow-hidden rounded-xl border bg-surface transition-colors sm:w-20"
               :class="selectedColor === color.name ? 'border-ink' : 'border-line hover:border-ink/30'"
               :aria-label="`Warna ${color.name}`"
               @click="selectedColor = color.name"
             >
-              <div class="aspect-square w-full p-1.5">
-                <GarmentVisual :color="color.hex" :type="product.category" />
+              <div class="aspect-square w-full">
+                <ProductVisual
+                  :src="colorImage(color, 'front')"
+                  :alt="`${color.name} ${product.name}`"
+                />
               </div>
-              <span class="block truncate px-1 pb-1 text-center text-[9px] font-medium text-muted">
+              <span class="block truncate border-t border-line px-1 py-1 text-center text-[9px] font-medium text-muted">
                 {{ color.name }}
               </span>
             </button>
           </div>
+
+          <p class="mt-2 text-[10.5px] text-muted">
+            Swatch mini menampilkan tekstur kain asli. Pilih warna untuk memperbarui foto produk &
+            model.
+          </p>
         </div>
 
         <!-- Info -->
@@ -234,17 +294,25 @@ watch(
                   v-for="color in product.colors"
                   :key="color.name"
                   type="button"
-                  class="size-11 rounded-full border transition-transform hover:scale-105"
+                  class="size-11 overflow-hidden rounded-full border transition-transform hover:scale-105"
                   :class="
                     selectedColor === color.name
-                      ? 'border-ink ring-1 ring-ink/20 ring-offset-2'
+                      ? 'border-ink ring-2 ring-ink/20 ring-offset-2'
                       : 'border-ink/15'
                   "
                   :style="{ backgroundColor: color.hex }"
                   :aria-label="color.name"
                   :title="color.name"
                   @click="selectedColor = color.name"
-                />
+                >
+                  <img
+                    v-if="color.swatchImage"
+                    :src="color.swatchImage"
+                    :alt="`Swatch ${color.name}`"
+                    class="size-full object-cover"
+                    loading="lazy"
+                  />
+                </button>
               </div>
             </div>
 
@@ -252,7 +320,11 @@ watch(
             <div>
               <div class="flex items-center justify-between">
                 <p class="label mb-0">Ukuran</p>
-                <button class="flex items-center gap-1 text-[11px] font-medium text-muted hover:text-ink">
+                <button
+                  class="flex items-center gap-1 text-[11px] font-medium text-muted hover:text-ink"
+                  :disabled="!product.sizeGuideUrl"
+                  @click="sizeGuideOpen = true"
+                >
                   <Ruler class="size-3.5" /> Panduan ukuran
                 </button>
               </div>
@@ -306,7 +378,8 @@ watch(
             <DtfCustomizer
               v-model="dtf"
               :product-category="product.category"
-              :garment-color="activeColor?.hex ?? '#e6dcc8'"
+              :garment-image="colorImage(activeColor, 'front')"
+              :garment-back-image="garmentBackImage"
             />
 
             <!-- Price summary + CTA -->
@@ -415,5 +488,37 @@ watch(
         </button>
       </div>
     </div>
+    <!-- Size guide modal -->
+    <Teleport to="body">
+      <div
+        v-if="sizeGuideOpen && product?.sizeGuideUrl"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-ink/55 p-4 backdrop-blur-sm"
+        @click.self="sizeGuideOpen = false"
+      >
+        <div class="w-full max-w-2xl overflow-hidden rounded-3xl border border-line bg-surface shadow-lift">
+          <div class="flex items-center justify-between border-b border-line px-4 py-3">
+            <div>
+              <p class="text-[10px] font-semibold tracking-[0.14em] text-muted uppercase">
+                Panduan ukuran
+              </p>
+              <p class="mt-0.5 text-sm font-semibold">{{ product.name }}</p>
+            </div>
+            <button class="icon-btn size-10" aria-label="Tutup panduan ukuran" @click="sizeGuideOpen = false">
+              <X class="size-5" />
+            </button>
+          </div>
+          <div class="max-h-[70vh] overflow-auto bg-[#e0e0e0] p-3">
+            <img
+              :src="product.sizeGuideUrl"
+              :alt="`Panduan ukuran ${product.name}`"
+              class="mx-auto w-full max-w-xl rounded-2xl"
+            />
+          </div>
+          <p class="border-t border-line px-4 py-2.5 text-[10.5px] text-muted">
+            Ukuran dalam cm. Toleransi produksi ±1–2 cm.
+          </p>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>

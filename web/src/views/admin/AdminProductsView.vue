@@ -2,10 +2,11 @@
 import { FwbModal } from 'flowbite-vue'
 import { Loader2, Package, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { computed, onMounted, reactive, ref } from 'vue'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import {
   CATEGORIES,
   COLOR_SWATCHES,
+  colorImage,
   formatIDR,
   productsApi,
   SIZE_OPTIONS,
@@ -295,8 +296,8 @@ onMounted(load)
       <div class="mt-4 space-y-2.5 lg:hidden">
         <div v-for="product in filtered" :key="product.id" class="rounded-2xl border border-line bg-surface p-3">
           <div class="flex gap-3">
-            <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-cream">
-              <GarmentVisual :color="product.colors[0]?.hex ?? '#e6dcc8'" :type="product.category" />
+            <div class="size-16 shrink-0 overflow-hidden rounded-xl bg-[#e0e0e0]">
+              <ProductVisual :src="colorImage(product.colors[0], 'front')" :alt="product.name" />
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-[13px] font-semibold">{{ product.name }}</p>
@@ -335,8 +336,8 @@ onMounted(load)
             <tr v-for="product in filtered" :key="product.id" class="transition-colors hover:bg-canvas/60">
               <td class="px-4 py-3">
                 <div class="flex items-center gap-3">
-                  <div class="size-11 shrink-0 overflow-hidden rounded-xl bg-cream">
-                    <GarmentVisual :color="product.colors[0]?.hex ?? '#e6dcc8'" :type="product.category" />
+                  <div class="size-11 shrink-0 overflow-hidden rounded-xl bg-[#e0e0e0]">
+                    <ProductVisual :src="colorImage(product.colors[0], 'front')" :alt="product.name" />
                   </div>
                   <div>
                     <p class="font-medium">{{ product.name }}</p>
@@ -361,10 +362,18 @@ onMounted(load)
                   <span
                     v-for="color in product.colors.slice(0, 4)"
                     :key="color.hex"
-                    class="size-3.5 rounded-full border border-ink/10"
+                    class="size-3.5 overflow-hidden rounded-full border border-ink/10"
                     :style="{ backgroundColor: color.hex }"
                     :title="color.name"
-                  />
+                  >
+                    <img
+                      v-if="color.swatchImage"
+                      :src="color.swatchImage"
+                      alt=""
+                      class="size-full object-cover"
+                      loading="lazy"
+                    />
+                  </span>
                   <span v-if="product.colors.length > 4" class="text-[10px] text-muted">
                     +{{ product.colors.length - 4 }}
                   </span>
@@ -470,7 +479,15 @@ onMounted(load)
                 :class="isColorActive(color.hex) ? 'border-ink bg-ink text-white' : 'border-line text-muted hover:border-ink/30'"
                 @click="toggleColor(color)"
               >
-                <span class="size-3 rounded-full border border-black/10" :style="{ backgroundColor: color.hex }" />
+                <span class="size-3 overflow-hidden rounded-full border border-black/10" :style="{ backgroundColor: color.hex }">
+                  <img
+                    v-if="color.swatchImage"
+                    :src="color.swatchImage"
+                    alt=""
+                    class="size-full object-cover"
+                    loading="lazy"
+                  />
+                </span>
                 {{ color.name }}
               </button>
             </div>

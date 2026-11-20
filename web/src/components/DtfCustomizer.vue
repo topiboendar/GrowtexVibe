@@ -2,7 +2,7 @@
 import { FwbToggle } from 'flowbite-vue'
 import { ImagePlus, Sparkles, Trash2 } from 'lucide-vue-next'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
 import {
   DTF_POSITIONS,
   DTF_SIZES,
@@ -15,8 +15,9 @@ import {
 
 const props = defineProps<{
   modelValue: DtfOption
-  productCategory: 'kaos' | 'polo' | 'hoodie' | 'oversized' | 'totebag'
-  garmentColor: string
+  productCategory: 'kaos' | 'polo' | 'hoodie' | 'sport' | 'headwear'
+  garmentImage?: string
+  garmentBackImage?: string
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: DtfOption] }>()
@@ -40,15 +41,21 @@ const price = computed(() => dtfUnitPrice(props.modelValue))
 const overlayStyle = computed(() => {
   switch (props.modelValue.position) {
     case 'dada-kiri':
-      return { top: '31%', left: '30%', width: '17%' }
+      return { top: '29%', left: '37%', width: '15%' }
     case 'lengan':
-      return { top: '24%', right: '20%', width: '13%' }
+      return { top: '26%', right: '17%', width: '12%' }
     case 'belakang':
-      return { top: '33%', left: '50%', width: '40%' }
+      return { top: '32%', left: '50%', width: '38%' }
     default:
-      return { top: '33%', left: '50%', width: '40%' }
+      return { top: '32%', left: '50%', width: '38%' }
   }
 })
+
+const previewImage = computed(() =>
+  props.modelValue.position === 'belakang'
+    ? (props.garmentBackImage ?? props.garmentImage)
+    : props.garmentImage,
+)
 
 function setPosition(value: DtfPosition) {
   emit('update:modelValue', { ...props.modelValue, position: value })
@@ -135,35 +142,38 @@ onBeforeUnmount(revokePreview)
 
     <div v-else class="space-y-5 px-4 py-4 sm:px-5">
       <!-- Preview -->
-      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-cream to-sand/60">
-        <div class="mx-auto aspect-[4/5] w-full max-w-[260px] p-3">
-          <GarmentVisual :color="garmentColor" :type="productCategory" />
-        </div>
-
-        <div
-          v-if="previewUrl"
-          class="pointer-events-none absolute -translate-x-1/2"
-          :style="overlayStyle"
-        >
-          <img
-            :src="previewUrl"
-            alt="Pratinjau desain"
-            class="w-full rounded-md opacity-90 mix-blend-multiply drop-shadow-sm"
+      <div class="relative overflow-hidden rounded-2xl bg-[#e0e0e0]">
+        <div class="relative mx-auto aspect-[4/5] w-full max-w-[260px]">
+          <ProductVisual
+            :src="previewImage"
+            :alt="`Pratinjau sablon ${productCategory}`"
           />
-        </div>
 
-        <div class="absolute top-2.5 left-2.5">
-          <span class="badge">
-            {{ DTF_POSITIONS.find((item) => item.value === position)?.label }}
-          </span>
-        </div>
+          <div
+            v-if="previewUrl"
+            class="pointer-events-none absolute -translate-x-1/2"
+            :style="overlayStyle"
+          >
+            <img
+              :src="previewUrl"
+              alt="Pratinjau desain"
+              class="w-full rounded-md opacity-90 mix-blend-multiply drop-shadow-sm"
+            />
+          </div>
 
-        <p
-          v-if="position === 'belakang'"
-          class="absolute right-2.5 bottom-2.5 rounded-full bg-ink/70 px-2.5 py-1 text-[10px] font-medium text-white"
-        >
-          Pratinjau area belakang
-        </p>
+          <div class="absolute top-2.5 left-2.5">
+            <span class="badge">
+              {{ DTF_POSITIONS.find((item) => item.value === position)?.label }}
+            </span>
+          </div>
+
+          <p
+            v-if="position === 'belakang'"
+            class="absolute right-2.5 bottom-2.5 rounded-full bg-ink/70 px-2.5 py-1 text-[10px] font-medium text-white"
+          >
+            Pratinjau area belakang
+          </p>
+        </div>
       </div>
 
       <!-- Position -->

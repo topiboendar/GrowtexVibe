@@ -2,11 +2,17 @@
 import { ArrowRight, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from 'lucide-vue-next'
 import { computed, reactive, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import GarmentVisual from '@/components/GarmentVisual.vue'
+import ProductVisual from '@/components/ProductVisual.vue'
+import { colorImage, SEED_PRODUCTS } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
+
+const asideImage = colorImage(
+  SEED_PRODUCTS.find((product) => product.category === 'hoodie')?.colors[0],
+  'halfBody',
+)
 
 const form = reactive({
   name: '',
@@ -74,8 +80,10 @@ async function submit() {
           <span class="mb-px size-1.5 rounded-full bg-accent-soft" />
         </div>
 
-        <div class="mx-auto w-full max-w-[240px] opacity-90">
-          <GarmentVisual color="#9caf9a" type="hoodie" />
+        <div class="mx-auto w-full max-w-[260px] overflow-hidden rounded-3xl border border-white/10">
+          <div class="aspect-[4/5] w-full">
+            <ProductVisual :src="asideImage" alt="Model hoodie premium GrowtexStore" />
+          </div>
         </div>
 
         <ul class="space-y-3">

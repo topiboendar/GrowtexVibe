@@ -2,14 +2,22 @@
 import { Plus, Star } from 'lucide-vue-next'
 import { computed, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import GarmentVisual from '@/components/GarmentVisual.vue'
-import { CATEGORIES, formatIDR, type Product } from '@/api'
+import ProductVisual from '@/components/ProductVisual.vue'
+import { CATEGORIES, colorImage, formatIDR, type Product } from '@/api'
 import { useCartStore } from '@/stores/cart'
 
 const props = defineProps<{ product: Product }>()
 
 const cart = useCartStore()
-const activeColor = ref(props.product.colors[0]?.hex ?? '#e6dcc8')
+const activeColorName = ref(props.product.colors[0]?.name ?? '')
+
+const activeColor = computed(
+  () =>
+    props.product.colors.find((color) => color.name === activeColorName.value) ??
+    props.product.colors[0],
+)
+
+const previewImage = computed(() => colorImage(activeColor.value, 'front'))
 
 const categoryLabel = computed(
   () => CATEGORIES.find((category) => category.id === props.product.category)?.label ?? 'Koleksi',
@@ -21,9 +29,8 @@ const discount = computed(() => {
 })
 
 function quickAdd() {
-  const color = props.product.colors.find((item) => item.hex === activeColor.value)
   cart.addItem(props.product, {
-    color: color?.name ?? props.product.colors[0]?.name ?? 'Putih',
+    color: activeColor.value?.name ?? props.product.colors[0]?.name ?? 'Black',
     size: props.product.sizes[0] ?? 'M',
     qty: 1,
     dtf: null,
@@ -41,9 +48,9 @@ function quickAdd() {
       :aria-label="`Lihat ${product.name}`"
     />
 
-    <div class="relative overflow-hidden bg-gradient-to-br from-cream to-sand/60">
-      <div class="aspect-[4/5] w-full p-4 transition-transform duration-500 group-hover:scale-[1.04]">
-        <GarmentVisual :color="activeColor" :type="product.category" />
+    <div class="relative overflow-hidden bg-[#e0e0e0]">
+      <div class="aspect-[4/5] w-full transition-transform duration-500 group-hover:scale-[1.04]">
+        <ProductVisual :src="previewImage" :alt="`${product.name} — ${activeColor?.name ?? ''}`" />
       </div>
 
       <div class="absolute top-3 left-3 z-20">
@@ -83,17 +90,25 @@ function quickAdd() {
             v-for="color in product.colors.slice(0, 4)"
             :key="color.name"
             type="button"
-            class="size-3.5 rounded-full border transition-transform hover:scale-110"
+            class="size-4 overflow-hidden rounded-full border transition-transform hover:scale-110"
             :class="
-              activeColor === color.hex
+              activeColor?.name === color.name
                 ? 'border-ink ring-1 ring-ink/20 ring-offset-1 ring-offset-surface'
                 : 'border-ink/15'
             "
             :style="{ backgroundColor: color.hex }"
             :title="color.name"
             :aria-label="`Warna ${color.name}`"
-            @click.prevent="activeColor = color.hex"
-          />
+            @click.prevent="activeColorName = color.name"
+          >
+            <img
+              v-if="color.swatchImage"
+              :src="color.swatchImage"
+              alt=""
+              class="size-full object-cover"
+              loading="lazy"
+            />
+          </button>
           <span v-if="product.colors.length > 4" class="text-[10px] font-medium text-muted">
             +{{ product.colors.length - 4 }}
           </span>
