@@ -10,10 +10,11 @@ import productCatalog from '@/data/products.json'
  * -------------------------------------------------------------------------- */
 
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/+$/, '')
+const AUTO_DEMO = !BASE_URL && (import.meta.env.PROD || import.meta.env.VITE_DEMO_MODE === 'true')
 
 export const apiStatus = reactive({
-  demo: false,
-  checked: false,
+  demo: AUTO_DEMO,
+  checked: AUTO_DEMO,
   lastError: '',
 })
 
